@@ -22,7 +22,10 @@ allowed_origins = [
     "https://tv.pavlovhosting.com"
 ]
 
-app = FastAPI()
+app = FastAPI(
+    title="mitm.tv.pavlovhosting.com"
+)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
@@ -111,11 +114,11 @@ async def meta(request: Request, replay_id: str):
 
 
 @app.get("/replay/{replay_id}/files/{file_name}")
-async def get_replay_files(request: Request, replay_id: str, file_name: str):
+async def get_replay_file_alt(request: Request, replay_id: str, file_name: str):
     return await get_replay_file(request, replay_id, file_name)
 
 
-@app.get("/replay/{replay_id}/files/{file_name}")
+@app.get("/replay/{replay_id}/file/{file_name}")
 async def get_replay_file(request: Request, replay_id: str, file_name: str):
     # Find the IP state for this IP address
     ip_state = get_ip_state(request.client.host)
