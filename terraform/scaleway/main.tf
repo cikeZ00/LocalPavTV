@@ -52,7 +52,7 @@ resource "scaleway_instance_server" "mitm_server" {
 resource "scaleway_instance_ip" "frontend_ip" {}
 
 resource "scaleway_instance_server" "frontend_server" {
-  name = "frontne-dserver"
+  name = "frontend-server"
   image = data.scaleway_instance_image.frontend_server.id
   type = "DEV1-S"
 
