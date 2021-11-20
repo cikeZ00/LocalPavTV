@@ -211,9 +211,14 @@ def upload(request: Request, file: bytes = File(...)):
 def reset(request: Request):
     ip_address = request.client.host
 
-    resource.delete_object(
-        Bucket=IP_STATE_BUCKET_NAME,
-        Key=ip_address + ".json"
+    resource.Bucket(IP_STATE_BUCKET_NAME).delete_objects(
+        Delete={
+            "Objects": [
+                {
+                    "Key": ip_address + ".json"
+                }
+            ]
+        }
     )
 
     return {
