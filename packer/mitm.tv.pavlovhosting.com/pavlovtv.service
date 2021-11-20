@@ -1,0 +1,14 @@
+[Unit]
+Description=pavlov tv mitm service
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+EnvironmentFile=-/root/environment.txt
+Restart=on-failure
+ExecStart=/usr/bin/python3 /app/main.py
+ExecReload=/bin/kill -HUP $MAINPID
+KillSignal=SIGINT
+
+[Install]
+WantedBy=multi-user.target

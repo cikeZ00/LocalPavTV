@@ -1,0 +1,43 @@
+name: Deploy packer mitm image
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "packer/mitm.pavlovhosting.com/**"
+      - ".github/workflows/packer-mitm-server.yml"
+
+env:
+  SCW_SECRET_KEY: ${{ secrets.PROD_SCW_SECRET_KEY }}
+  SCW_ACCESS_KEY: ${{ secrets.PROD_SCW_ACCESS_KEY }}
+  SCW_DEFAULT_PROJECT_ID: ${{ secrets.PROD_SCW_PROJECT_ID }}
+  BUCKET_NAME: ${{ secrets.PROD_BUCKET_NAME }}
+  BUCKET_REGION: ${{ secrets.PROD_BUCKET_REGION }}
+  REPLAY_FILES_URL: ${{ secrets.PROD_REPLAY_FILES_URL }}
+
+concurrency:
+  group: packer
+
+jobs:
+  deploy-packer:
+    name: Build using Packer
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Get Hashicorp GPG key
+      run: curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+
+    - name: Add Hashicorp repository
+      run: sudo apt-add-repository "deb [arch=$(dpkg --print-architecture)] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+
+    - name: Install packer
+      run: sudo apt-get update && sudo apt-get install -y packer
+
+    - name: Packer build
+      run: cd packer/mitm.tv.pavlovhosting.com && packer build -var "scw_zone=fr-par-1" mitm.tv.pavlovhosting.com.pkr.hcl
+      env:
+        IMAGE_NAME: "mitm-server"
