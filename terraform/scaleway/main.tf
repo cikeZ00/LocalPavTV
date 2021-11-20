@@ -34,6 +34,11 @@ data "scaleway_instance_image" "mitm_server" {
   name = "mitm-server"
 }
 
+data "scaleway_instance_image" "frontend_server" {
+  architecture = "x86_64"
+  name = "frontend-server"
+}
+
 resource "scaleway_instance_ip" "mitm_ip" {}
 
 resource "scaleway_instance_server" "mitm_server" {
@@ -42,6 +47,16 @@ resource "scaleway_instance_server" "mitm_server" {
   type = "DEV1-S"
 
   ip_id = scaleway_instance_ip.mitm_ip.id
+}
+
+resource "scaleway_instance_ip" "frontend_ip" {}
+
+resource "scaleway_instance_server" "frontend_server" {
+  name = "frontne-dserver"
+  image = data.scaleway_instance_image.frontend_server.id
+  type = "DEV1-S"
+
+  ip_id = scaleway_instance_ip.frontend_ip.id
 }
 
 resource "scaleway_registry_namespace" "containers" {
