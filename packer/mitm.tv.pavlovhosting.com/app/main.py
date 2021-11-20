@@ -110,7 +110,7 @@ async def meta(request: Request, replay_id: str):
         )
 
 
-@app.get("/replay/{replay_id}/file/{file_name}")
+@app.get("/replay/{replay_id}/files/{file_name}")
 async def get_replay_file(request: Request, replay_id: str, file_name: str):
     # Find the IP state for this IP address
     ip_state = get_ip_state(request.client.host)
