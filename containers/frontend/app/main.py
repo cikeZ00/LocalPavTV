@@ -199,10 +199,14 @@ def upload(request: Request, file: bytes = File(...)):
 def reset(request: Request):
     ip_address = request.client.host
 
-    ip_state_bucket = resource.Bucket(IP_STATE_BUCKET_NAME)
-    ip_state_bucket.delete_object(
+    resource.delete_object(
+        Bucket=IP_STATE_BUCKET_NAME,
         Key=ip_address + ".json"
     )
+
+    return {
+        "ok": True
+    }
 
 
 @app.get("/whoami")
