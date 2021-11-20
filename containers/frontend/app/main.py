@@ -18,7 +18,12 @@ SERVER = "http://tv.pavlov-vr.com"
 
 app = FastAPI(
     title="tv.pavlovhosting.com",
-    description="Download and replay Pavlov TV files",
+    description="Download and replay Pavlov TV files\n"
+                "1. Add the following to your hosts file: "
+                "51.15.238.121 tv.pavlov-vr.com\n"
+                "2. Check you can reach this page: \n"
+                "http://tv.pavlov-vr.com/__tv.pavlovhosting.com/relay\n"
+                "3. Start downloading and uploading replays!",
     version="0.0.1",
     contact={
         "name": "PavlovHosting.com"
