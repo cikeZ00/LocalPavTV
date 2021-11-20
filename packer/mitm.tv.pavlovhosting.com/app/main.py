@@ -7,6 +7,7 @@ from starlette.background import BackgroundTask
 from botocore.exceptions import ClientError
 from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse, StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 from httpx import AsyncClient
 
 PORT = os.environ.get("PORT")
@@ -16,7 +17,20 @@ SCW_ACCESS_KEY = os.environ.get("SCW_ACCESS_KEY")
 SCW_SECRET_KEY = os.environ.get("SCW_SECRET_KEY")
 REPLAY_FILES_URL = os.environ.get("REPLAY_FILES_URL")
 
+allowed_origins = [
+    "http://localhost",
+    "https://tv.pavlovhosting.com"
+]
+
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
+
 session = boto3.Session(region_name=BUCKET_REGION)
 resource = session.resource(
     's3',
@@ -24,6 +38,7 @@ resource = session.resource(
     aws_access_key_id=SCW_ACCESS_KEY,
     aws_secret_access_key=SCW_SECRET_KEY
 )
+
 http_client = AsyncClient(base_url="http://tv.pavlov-vr.com:80/")
 
 
@@ -112,6 +127,13 @@ async def get_replay_file(request: Request, replay_id: str, file_name: str):
             background=BackgroundTask(response.aclose),
             headers=response.headers
         )
+
+
+@app.get("/__tv.pavlovhosting.com/relay")
+def relay():
+    return {
+        "__tv.pavlovhosting.com/relay": True
+    }
 
 
 @app.post("{any:path}")
