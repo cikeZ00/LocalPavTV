@@ -44,4 +44,6 @@ resource "scaleway_instance_server" "mitm_server" {
   name = "mitm-server"
   image = data.scaleway_instance_image.mitm_server.id
   type = "DEV1-S"
+
+  ip_id = scaleway_instance_ip.mitm_ip.id
 }
