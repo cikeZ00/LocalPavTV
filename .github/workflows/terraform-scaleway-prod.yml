@@ -1,0 +1,41 @@
+name: Deploy scaleway production infrastructure using terraform
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "terraform/scaleway/**"
+      - ".github/workflows/terraform-scaleway-prod.yml"
+
+env:
+  SCW_SECRET_KEY: ${{ secrets.PROD_SCW_SECRET_KEY }}
+  SCW_ACCESS_KEY: ${{ secrets.PROD_SCW_ACCESS_KEY }}
+  SCW_DEFAULT_PROJECT_ID: ${{ secrets.PROD_SCW_PROJECT_ID }}
+
+jobs:
+  deploy-terraform:
+    name: Deploy to Terraform
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Get Hashicorp GPG key
+      run: curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+
+    - name: Add Hashicorp repository
+      run: sudo apt-add-repository "deb [arch=$(dpkg --print-architecture)] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+
+    - name: Install terraform
+      run: sudo apt-get update && sudo apt-get install -y terraform
+
+    - name: Terraform init
+      run: cd terraform/scaleway && terraform init -backend-config="bucket=tv.pavlovhosting.com-terraform-state" -backend-config="access_key=$SCW_ACCESS_KEY" -backend-config="secret_key=$SCW_SECRET_KEY"
+
+    - name: Terraform plan
+      run: cd terraform/scaleway && terraform plan -out=tfplan -input=false
+
+    - name: Terraform deploy
+      run: cd terraform/scaleway && terraform apply --auto-approve -input=false tfplan
