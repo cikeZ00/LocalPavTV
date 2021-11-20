@@ -31,7 +31,7 @@ jobs:
       # Build docker image
       - name: Image
         run: |-
-          docker build --build-arg --tag eu.gcr.io/$PROJECT_ID/frontend:$GITHUB_SHA containers/frontend
+          docker build --tag eu.gcr.io/$PROJECT_ID/frontend:$GITHUB_SHA containers/frontend
       # Configure docker to use the gcloud command-line tool as a credential helper
       - run: |
           gcloud auth configure-docker -q
