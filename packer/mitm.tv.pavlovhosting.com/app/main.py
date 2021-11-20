@@ -150,16 +150,32 @@ async def get_events(request: Request, replay_id: str):
         )
 
 
+@app.post("/replay/{replay_id}/startDownloading")
+def start_downloading(request: Request, replay_id: str, user:str):
+    # Find the IP state for this IP address
+    ip_state = get_ip_state(request.client.host)
+    # Does the user have a mounted replay?
+    if "mounted_replay" in ip_state:
+        return ip_state["mounted_replay"]["start_downloading"]
+    else:
+        # Load download response
+        request = http_client.build_request(
+            "POST",
+            f"/replay/{replay_id}/startDownloading?user={user}"
+        )
+        response = await http_client.send(request, stream=True)
+        return StreamingResponse(
+            response.aiter_raw(),
+            background=BackgroundTask(response.aclose),
+            headers=response.headers
+        )
+
+
 @app.get("/__tv.pavlovhosting.com/relay")
 def relay():
     return {
         "__tv.pavlovhosting.com/relay": True
     }
-
-
-@app.post("{any:path}")
-def catch_all():
-    return {}
 
 
 if __name__ == "__main__":
