@@ -129,6 +129,27 @@ async def get_replay_file(request: Request, replay_id: str, file_name: str):
         )
 
 
+@app.get("/replay/{replay_id}/event")
+async def get_events(request: Request, replay_id: str):
+    # Find the IP state for this IP address
+    ip_state = get_ip_state(request.client.host)
+    # Does the user have a mounted replay?
+    if "mounted_replay" in ip_state:
+        # Send to the bucket
+        return {
+            "events": ip_state["mounted_replay"]["events"]
+        }
+    else:
+        # Load events
+        request = http_client.build_request("GET", f"/replay/{replay_id}/event")
+        response = await http_client.send(request, stream=True)
+        return StreamingResponse(
+            response.aiter_raw(),
+            background=BackgroundTask(response.aclose),
+            headers=response.headers
+        )
+
+
 @app.get("/__tv.pavlovhosting.com/relay")
 def relay():
     return {
