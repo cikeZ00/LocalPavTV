@@ -43,3 +43,8 @@ resource "scaleway_instance_server" "mitm_server" {
 
   ip_id = scaleway_instance_ip.mitm_ip.id
 }
+
+resource "scaleway_registry_namespace" "containers" {
+  name = "tv.pavlovhosting.com-containers"
+  is_public = false
+}
