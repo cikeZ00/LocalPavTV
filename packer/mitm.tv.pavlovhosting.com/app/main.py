@@ -151,7 +151,7 @@ async def get_events(request: Request, replay_id: str):
 
 
 @app.post("/replay/{replay_id}/startDownloading")
-def start_downloading(request: Request, replay_id: str, user:str):
+async def start_downloading(request: Request, replay_id: str, user:str):
     # Find the IP state for this IP address
     ip_state = get_ip_state(request.client.host)
     # Does the user have a mounted replay?
