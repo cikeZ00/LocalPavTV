@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "packer/mitm.pavlovhosting.com/**"
+      - "packer/mitm.pavlovhosting.com/app/**"
       - ".github/workflows/packer-mitm-server.yml"
 
 env:
