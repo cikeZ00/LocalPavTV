@@ -1,0 +1,44 @@
+name: Deploy packer frontend image
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "packer/tv.pavlovhosting.com/**"
+      - ".github/workflows/packer-frontend-server.yml"
+
+env:
+  SCW_SECRET_KEY: ${{ secrets.PROD_SCW_SECRET_KEY }}
+  SCW_ACCESS_KEY: ${{ secrets.PROD_SCW_ACCESS_KEY }}
+  SCW_DEFAULT_PROJECT_ID: ${{ secrets.PROD_SCW_PROJECT_ID }}
+  PRIVATE_KEY: ${{ secrets.PROD_PRIVATE_KEY }}
+  BUCKET_REGION: ${{ secrets.PROD_BUCKET_REGION }}
+  IP_STATE_BUCKET_NAME: ${{ secrets.PROD_IP_STATE_BUCKET_NAME }}
+  REPLAY_FILES_BUCKET_NAME: ${{ secrets.PROD_REPLAY_FILES_BUCKET_NAME }}
+
+concurrency:
+  group: packer-frontend
+
+jobs:
+  deploy-packer:
+    name: Build using Packer
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Get Hashicorp GPG key
+      run: curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+
+    - name: Add Hashicorp repository
+      run: sudo apt-add-repository "deb [arch=$(dpkg --print-architecture)] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+
+    - name: Install packer
+      run: sudo apt-get update && sudo apt-get install -y packer
+
+    - name: Packer build
+      run: cd packer/tv.pavlovhosting.com && packer build -var "scw_zone=fr-par-1" tv.pavlovhosting.com.pkr.hcl
+      env:
+        IMAGE_NAME: "frontend-server"
