@@ -205,5 +205,12 @@ def reset(request: Request):
     )
 
 
+@app.get("/whoami")
+def whoami(request: Request):
+    return {
+        "ip": request.client.host
+    }
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)
