@@ -1,14 +1,15 @@
 import json
 import os
-import uvicorn
+
 import boto3
 import httpx
-from starlette.background import BackgroundTask
+import uvicorn
 from botocore.exceptions import ClientError
 from fastapi import FastAPI, Request
-from fastapi.responses import RedirectResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse, StreamingResponse, Response
 from httpx import AsyncClient
+from starlette.background import BackgroundTask
 
 PORT = os.environ.get("PORT")
 BUCKET_NAME = os.environ.get("BUCKET_NAME")
@@ -124,8 +125,19 @@ async def get_replay_file(request: Request, replay_id: str, file_name: str):
     ip_state = get_ip_state(request.client.host)
     # Does the user have a mounted replay?
     if "mounted_replay" in ip_state:
-        # Send to the bucket
-        return RedirectResponse(REPLAY_FILES_URL + replay_id + "/" + file_name)
+        # Stream response from bucket
+        async with httpx.AsyncClient() as client:
+            response = await client.get(REPLAY_FILES_URL + replay_id + "/" + file_name)
+            response_headers = await client.get(REPLAY_FILES_URL + replay_id + "/" + file_name + ".headers")
+            if len(response_headers.content) > 0:
+                response_headers = response_headers.json()
+            else:
+                response_headers = {}
+        return Response(
+            content=response.content,
+            status_code=200,
+            headers=response_headers
+        )
     else:
         # Stream response from server
         request = http_client.build_request("GET", f"/replay/{replay_id}/file/{file_name}")
@@ -175,6 +187,14 @@ async def start_downloading(request: Request, replay_id: str, user:str):
             background=BackgroundTask(response.aclose),
             headers=response.headers
         )
+
+
+@app.post("/replay/{replay_id}/viewer/{viewer_id}")
+def replay_viewer():
+    return Response(
+        content="",
+        status_code=204
+    )
 
 
 @app.get("/__tv.pavlovhosting.com/relay")
