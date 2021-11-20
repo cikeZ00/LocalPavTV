@@ -52,6 +52,18 @@ def base64_to_bytes(base64_str):
     return base64.b64decode(base64_str)
 
 
+@app.get("/list")
+def list_interesting_games():
+    games_list = requests.get(SERVER + "/find/any?dummy=0")
+    games_list.raise_for_status()
+    games = games_list.json()
+    interesting_games = []
+    for replay in games["replays"]:
+        if len(replay["users"]) > 0 and replay["live"] is False:
+            interesting_games.append(replay)
+    return interesting_games
+
+
 @app.get("/download/{replay_id}")
 def download_replay(replay_id: str):
     # To download a replay we need to collect
