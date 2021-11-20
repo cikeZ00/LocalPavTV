@@ -5,8 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "packer/mitm.pavlovhosting.com/**"
-      - "packer/mitm.pavlovhosting.com/app/**"
+      - "packer/mitm.tv.pavlovhosting.com/**"
       - ".github/workflows/packer-mitm-server.yml"
 
 env:
