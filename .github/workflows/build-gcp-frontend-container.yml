@@ -1,0 +1,41 @@
+name: Build
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "containers/frontend/**"
+      - ".github/workflows/build-gcp-frontend-container.yml"
+
+jobs:
+  build:
+    name: Build image
+    runs-on: ubuntu-latest
+
+    env:
+      HASH: $(git rev-parse --short "$GITHUB_SHA")
+      BRANCH: ${GITHUB_REF##*/}
+      PROJECT_ID: ${{ secrets.PROD_GCP_PROJECT_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # Setup gcloud CLI
+      - uses: google-github-actions/setup-gcloud@v0.2.0
+        with:
+          service_account_key: ${{ secrets.PROD_GCP_SERVICE_ACCOUNT_KEY }}
+          project_id: ${{ secrets.PROD_GCP_PROJECT_ID }}
+          export_default_credentials: true
+
+      # Build docker image
+      - name: Image
+        run: |-
+          docker build --tag eu.gcr.io/$PROJECT_ID/frontend:$GITHUB_SHA containers/frontend
+      # Configure docker to use the gcloud command-line tool as a credential helper
+      - run: |
+          gcloud auth configure-docker -q
+      # Push image to Google Container Registry
+      - name: Build
+        run: |-
+          docker push eu.gcr.io/$PROJECT_ID/frontend:$GITHUB_SHA
