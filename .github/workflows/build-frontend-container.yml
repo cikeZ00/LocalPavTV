@@ -1,0 +1,32 @@
+name: Build frontend docker container
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "containers/frontend/**"
+      - ".github/workflows/build-frontend-container.yml"
+
+env:
+  REGISTRY_SERVER: ${{ secrets.PROD_REGISTRY_SERVER }}
+  SW5_SCW_SECRET_KEY: ${{ secrets.PROD_SCW_SECRET_KEY }}
+
+concurrency:
+  group: deploy-containers
+
+jobs:
+  build-containers:
+    name: Build containers
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Deploy containers
+      run: |
+      docker login $REGISTRY_SERVER -u nologin -p $SW5_SCW_SECRET_KEY
+      cd containers/frontend
+      docker build --tag $REGISTRY_SERVER/frontend:latest .
+      docker push $REGISTRY_SERVER/frontend:latest
