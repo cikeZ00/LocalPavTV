@@ -136,9 +136,7 @@ async def get_events(request: Request, replay_id: str):
     # Does the user have a mounted replay?
     if "mounted_replay" in ip_state:
         # Send to the bucket
-        return {
-            "events": ip_state["mounted_replay"]["events"]
-        }
+        return ip_state["mounted_replay"]["events"]
     else:
         # Load events
         request = http_client.build_request("GET", f"/replay/{replay_id}/event")
