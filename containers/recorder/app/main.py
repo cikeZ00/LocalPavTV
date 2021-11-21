@@ -3,8 +3,10 @@ import json
 import requests
 import base64
 import boto3
+import time
 from fastapi import FastAPI, HTTPException
 from cryptography.fernet import Fernet
+from requests import HTTPError
 
 PRIVATE_KEY = os.environ.get("PRIVATE_KEY")
 BUCKET_REGION = os.environ.get("BUCKET_REGION")
@@ -28,6 +30,10 @@ resource = session.resource(
 
 def bytes_to_base64(bytes_str):
     return base64.b64encode(bytes_str).decode("ascii")
+
+
+def base64_to_bytes(base64_str):
+    return base64.b64decode(base64_str)
 
 
 @app.get("/download/{replay_id}")
@@ -66,12 +72,10 @@ def download_replay(replay_id: str):
     )
     startDownload.raise_for_status()
     startDownload_json = startDownload.json()
-    if startDownload_json["state"] != "Recorded":
-        raise HTTPException(
-            status_code=400,
-            detail="A recording must be finished "
-                   "(not live) before it can be downloaded."
-        )
+
+    current_state = startDownload_json["state"]
+
+    startDownload_json["state"] = "Recorded"
     replay_data["start_downloading"] = startDownload_json
 
     meta = requests.get(f"{SERVER}/meta/{replay_id}")
@@ -108,6 +112,73 @@ def download_replay(replay_id: str):
         replay_files["stream." + str(i) + ".headers"] = bytes_to_base64(
             headers_json.encode("utf-8")
         )
+
+    if current_state != "Recorded":
+        chunk_number = startDownload_json["numChunks"]
+        # Need to buffer for more chunks
+        # We will wait up to 5 minutes for another chunk to become available
+        time_since_last_good_chunk = time.time()
+        final_time = 0
+        while time_since_last_good_chunk + 300 > time.time():
+            response = requests.get(
+                f"{SERVER}/replay/{replay_id}/file/stream." + str(chunk_number)
+            )
+            try:
+                response.raise_for_status()
+                replay_files["stream." + str(chunk_number)] = \
+                    bytes_to_base64(response.content)
+                headers_json = json.dumps({
+                    "MTime1": response.headers["MTime1"],
+                    "MTime2": response.headers["MTime2"],
+                    "NumChunks": response.headers["NumChunks"],
+                    "State": response.headers["State"],
+                    "Time": response.headers["Time"],
+                    "Transfer-Encoding": response.headers["Transfer-Encoding"]
+                })
+                final_time = response.headers["Time"]
+                replay_files["stream." + str(chunk_number) + ".headers"] = \
+                    bytes_to_base64(headers_json.encode("utf-8"))
+                chunk_number = chunk_number + 1
+                time_since_last_good_chunk = time.time()
+            except HTTPError:
+                # Wait 10 seconds before retrying
+                time.sleep(10)
+        # Need to now correct the number of chunks in each recording.
+        # The following need to be re-written
+        # numChunks in meta
+        # live in meta
+        # numChunks in startDownloading
+        # Time, State and NumChunks in stream headers
+
+        # Total chunks = chunk_number
+        # State = "Recorded"
+        # Time = final_time
+
+        # Correct the meta record
+        replay_data["meta"]["numChunks"] = chunk_number
+        replay_data["meta"]["live"] = False
+
+        # Correct the startDownloading record
+        replay_data["start_downloading"]["time"] = final_time
+        replay_data["start_downloading"]["state"] = "Recorded"
+        replay_data["start_downloading"]["numChunks"] = chunk_number
+
+        # Correct the stream headers
+        for i in range(0, chunk_number + 1):
+            # Get the current headers out
+            headers_json = json.loads(
+                base64_to_bytes(
+                    replay_files["stream." + str(i) + ".headers"]
+                )
+            )
+            headers_json["Time"] = final_time
+            headers_json["State"] = "Recorded"
+            headers_json["NumChunks"] = chunk_number
+
+            replay_files["stream." + str(i) + ".headers"] = \
+                bytes_to_base64(json.dumps(headers_json).encode("utf-8"))
+        # This is the end of file correction to turn live streams into
+        # recordings
 
     full_content = {
         "data": replay_data,
