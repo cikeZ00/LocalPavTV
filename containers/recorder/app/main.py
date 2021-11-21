@@ -4,6 +4,7 @@ import requests
 import base64
 import boto3
 import time
+import uvicorn
 
 from botocore.exceptions import ClientError
 from fastapi import FastAPI, HTTPException
@@ -55,7 +56,7 @@ def cron():
     all_recordings = requests.get(SERVER + "/find/any?dummy=0")
     all_recordings.raise_for_status()
     # Find any that aren't being downloaded and have players
-    for recording in all_recordings["replays"]:
+    for recording in all_recordings.json()["replays"]:
         if len(recording["users"]) > 0:
             replay_id = recording["_id"]
             if not does_key_exist(
@@ -71,6 +72,7 @@ def cron():
 
 @app.get("/download/{replay_id}")
 def download_replay(replay_id: str):
+    print("Downloading " + replay_id)
     # To download a replay we need to collect
     # the /meta page
     # the /event page
@@ -100,8 +102,8 @@ def download_replay(replay_id: str):
 
     # Mark that we're going to download this recording
     resource.Bucket(FILES_FOR_DOWNLOAD_BUCKET_NAME).put_object(
-        f"{replay_id}/in_progress.txt",
-        str(time.time())
+        Key=f"{replay_id}/in_progress.txt",
+        Body=str(time.time())
     )
 
     replay_data["find"] = findAllResponse
@@ -154,6 +156,7 @@ def download_replay(replay_id: str):
 
     if current_state != "Recorded":
         chunk_number = startDownload_json["numChunks"]
+        confirmed_chunks = chunk_number
         # Need to buffer for more chunks
         # We will wait up to 5 minutes for another chunk to become available
         time_since_last_good_chunk = time.time()
@@ -177,11 +180,19 @@ def download_replay(replay_id: str):
                 final_time = response.headers["Time"]
                 replay_files["stream." + str(chunk_number) + ".headers"] = \
                     bytes_to_base64(headers_json.encode("utf-8"))
+                confirmed_chunks = chunk_number
                 chunk_number = chunk_number + 1
                 time_since_last_good_chunk = time.time()
+
+                if response.headers["State"] == "Recorded":
+                    print("End of stream confirmed by server.")
+                    break
             except HTTPError:
                 # Wait 10 seconds before retrying
                 time.sleep(10)
+                print("Waiting for chunk " + str(chunk_number) + " " +
+                      str((time_since_last_good_chunk + 300) - time.time()) +
+                      " seconds remain...")
         # Need to now correct the number of chunks in each recording.
         # The following need to be re-written
         # numChunks in meta
@@ -189,21 +200,23 @@ def download_replay(replay_id: str):
         # numChunks in startDownloading
         # Time, State and NumChunks in stream headers
 
-        # Total chunks = chunk_number
+        # Total chunks = confirmed_chunks
         # State = "Recorded"
         # Time = final_time
 
+        # Remember the final chunk number was probably not fetched
+
         # Correct the meta record
-        replay_data["meta"]["numChunks"] = chunk_number
+        replay_data["meta"]["numChunks"] = confirmed_chunks + 1
         replay_data["meta"]["live"] = False
 
         # Correct the startDownloading record
         replay_data["start_downloading"]["time"] = final_time
         replay_data["start_downloading"]["state"] = "Recorded"
-        replay_data["start_downloading"]["numChunks"] = chunk_number
+        replay_data["start_downloading"]["numChunks"] = confirmed_chunks + 1
 
         # Correct the stream headers
-        for i in range(0, chunk_number + 1):
+        for i in range(0, confirmed_chunks + 1):
             # Get the current headers out
             headers_json = json.loads(
                 base64_to_bytes(
@@ -212,7 +225,7 @@ def download_replay(replay_id: str):
             )
             headers_json["Time"] = final_time
             headers_json["State"] = "Recorded"
-            headers_json["NumChunks"] = chunk_number
+            headers_json["NumChunks"] = confirmed_chunks
 
             replay_files["stream." + str(i) + ".headers"] = \
                 bytes_to_base64(json.dumps(headers_json).encode("utf-8"))
@@ -237,10 +250,14 @@ def download_replay(replay_id: str):
     file_content = str.encode("1 tv.pavlovhosting.com\n") + encrypted_content
 
     resource.Bucket(FILES_FOR_DOWNLOAD_BUCKET_NAME).put_object(
-        f"{replay_id}/{gamemode}-{replayMap}-{replay_id}.pavlovtv",
-        file_content
+        Key=f"{replay_id}/{gamemode}-{replayMap}-{replay_id}.pavlovtv",
+        Body=file_content
     )
 
     return {
         "file": f"{gamemode}-{replayMap}-{replay_id}.pavlovtv"
     }
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8080)
