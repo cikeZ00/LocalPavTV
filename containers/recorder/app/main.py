@@ -256,9 +256,10 @@ def download_replay(replay_id: str):
     timestamp = str(time.time())
 
     file_content = str.encode("1 tv.pavlovhosting.com\n") + encrypted_content
+    num_players = str(len(findAllResponse["users"]))
 
     resource.Bucket(FILES_FOR_DOWNLOAD_BUCKET_NAME).put_object(
-        Key=f"{replay_id}/{timestamp} {gamemode}-{replayMap}-{replay_id}.pavlovtv",
+        Key=f"{replay_id}/{timestamp} {gamemode}-{replayMap}-{num_players} players-{replay_id}.pavlovtv",
         Body=file_content
     )
 
