@@ -253,11 +253,12 @@ def download_replay(replay_id: str):
     # Serve file
     gamemode = meta.json()["gameMode"]
     replayMap = findAllResponse["friendlyName"].strip()
+    timestamp = str(time.time())
 
     file_content = str.encode("1 tv.pavlovhosting.com\n") + encrypted_content
 
     resource.Bucket(FILES_FOR_DOWNLOAD_BUCKET_NAME).put_object(
-        Key=f"{replay_id}/{gamemode}-{replayMap}-{replay_id}.pavlovtv",
+        Key=f"{replay_id}/{timestamp} {gamemode}-{replayMap}-{replay_id}.pavlovtv",
         Body=file_content
     )
 
