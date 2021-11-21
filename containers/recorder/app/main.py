@@ -13,8 +13,8 @@ from requests import HTTPError
 
 PRIVATE_KEY = os.environ.get("PRIVATE_KEY")
 BUCKET_REGION = os.environ.get("BUCKET_REGION")
-SCW_ACCESS_KEY = os.environ.get("SCW_ACCESS_KEY")
-SCW_SECRET_KEY = os.environ.get("SCW_SECRET_KEY")
+SCW_ACCESS_KEY = os.environ.get("SCALEWAY_ACCESS_KEY")
+SCW_SECRET_KEY = os.environ.get("SCALEWAY_SECRET_KEY")
 FILES_FOR_DOWNLOAD_BUCKET_NAME = os.environ.get("FILES_FOR_DOWNLOAD_BUCKET_NAME")
 
 SERVER = "http://tv.pavlov-vr.com"
