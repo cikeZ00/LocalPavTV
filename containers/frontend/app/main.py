@@ -4,6 +4,7 @@ import requests
 import uvicorn
 import base64
 import boto3
+import hurry.filesize
 from fastapi import FastAPI, HTTPException, Response, File, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from cryptography.fernet import Fernet
@@ -243,7 +244,8 @@ def all_recordings_html():
         if s3_object.key.endswith(".pavlovtv"):
             name = s3_object.key.split("/")[1]
             timestamp = name.split(" ")[0]
-            entries[timestamp] = f"<li><a href='https://pavlovtv-files-for-download.s3-website.fr-par.scw.cloud//{s3_object.key}'>{name}</a></li>"
+            entries[timestamp] = f"<li><a href='https://pavlovtv-files-for-download.s3-website.fr-par.scw.cloud//{s3_object.key}'>{name}</a>" \
+                                 f" ({hurry.filesize.size(s3_object.size)}B)</li>"
     for _, v in sorted(entries.items()):
         anchor_list = v + anchor_list
     return HTMLResponse(

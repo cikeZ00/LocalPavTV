@@ -2,3 +2,4 @@ requests==2.26.0
 cryptography==35.0.0
 python-multipart==0.0.5
 boto3==1.18.11
+hurry.filesize==0.9
