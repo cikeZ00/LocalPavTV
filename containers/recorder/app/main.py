@@ -195,6 +195,7 @@ def download_replay(replay_id: str):
                       " seconds remain...")
         # Need to now correct the number of chunks in each recording.
         # The following need to be re-written
+        # live in find
         # numChunks in meta
         # live in meta
         # numChunks in startDownloading
@@ -204,7 +205,8 @@ def download_replay(replay_id: str):
         # State = "Recorded"
         # Time = final_time
 
-        # Remember the final chunk number was probably not fetched
+        # Correct the find record
+        replay_data["find"]["live"] = False
 
         # Correct the meta record
         replay_data["meta"]["numChunks"] = confirmed_chunks + 1
