@@ -1,0 +1,32 @@
+name: Build recorder docker container
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "containers/recorder/**"
+      - ".github/workflows/build-recorder-container.yml"
+
+env:
+  REGISTRY_SERVER: ${{ secrets.PROD_CONTAINER_REGISTRY }}
+  SCW_SECRET_KEY: ${{ secrets.PROD_SCW_SECRET_KEY }}
+
+concurrency:
+  group: deploy-containers
+
+jobs:
+  build-containers:
+    name: Build containers
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Deploy containers
+      run: |
+        docker login $REGISTRY_SERVER -u nologin -p $SCW_SECRET_KEY
+        cd containers/recorder
+        docker build --tag $REGISTRY_SERVER/recorder:latest .
+        docker push $REGISTRY_SERVER/recorder:latest
