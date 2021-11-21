@@ -158,10 +158,10 @@ def download_replay(replay_id: str):
         chunk_number = startDownload_json["numChunks"]
         confirmed_chunks = startDownload_json["numChunks"] - 1
         # Need to buffer for more chunks
-        # We will wait up to 5 minutes for another chunk to become available
+        # We will wait up to 2 minutes for another chunk to become available
         time_since_last_good_chunk = time.time()
         final_time = 0
-        while time_since_last_good_chunk + 300 > time.time():
+        while time_since_last_good_chunk + 120 > time.time():
             response = requests.get(
                 f"{SERVER}/replay/{replay_id}/file/stream." + str(chunk_number)
             )
@@ -191,7 +191,7 @@ def download_replay(replay_id: str):
                 # Wait 10 seconds before retrying
                 time.sleep(10)
                 print("Waiting for chunk " + str(chunk_number) + " " +
-                      str((time_since_last_good_chunk + 300) - time.time()) +
+                      str((time_since_last_good_chunk + 120) - time.time()) +
                       " seconds remain...")
         # Need to now correct the number of chunks in each recording.
         # The following need to be re-written
