@@ -30,7 +30,7 @@ resource "scaleway_object_bucket" "replay_files" {
 }
 
 resource "scaleway_object_bucket" "files_for_download" {
-  name = "tv.pavlovhosting.com-files-for-download"
+  name = "pavlovtv-files-for-download"
   acl = "public-read"
 }
 
