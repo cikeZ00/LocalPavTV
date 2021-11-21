@@ -19,7 +19,9 @@ FILES_FOR_DOWNLOAD_BUCKET_NAME = os.environ.get("FILES_FOR_DOWNLOAD_BUCKET_NAME"
 
 SERVER = "http://tv.pavlov-vr.com"
 
-app = FastAPI()
+app = FastAPI(
+    version="0.0.2"
+)
 
 
 session = boto3.Session(region_name=BUCKET_REGION)
