@@ -8,7 +8,7 @@ User=root
 Group=root
 EnvironmentFile=/root/environment.txt
 Restart=on-failure
-ExecStart=/bin/sh -c "docker login rg.fr-par.scw.cloud/tv.pavlovhosting.com-containers -u nologin -p $SCW_SECRET_KEY && docker run --env-file /root/environment.txt -p 80:80 rg.fr-par.scw.cloud/tv.pavlovhosting.com-containers/frontend:latest"
+ExecStart=/bin/sh -c "/root/run.sh"
 ExecReload=/bin/kill -HUP $MAINPID
 KillSignal=SIGINT
 

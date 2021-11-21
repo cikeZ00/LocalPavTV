@@ -5,7 +5,7 @@ import uvicorn
 import base64
 import boto3
 from fastapi import FastAPI, HTTPException, Response, File, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from cryptography.fernet import Fernet
 
 PRIVATE_KEY = os.environ.get("PRIVATE_KEY")
@@ -43,7 +43,7 @@ resource = session.resource(
 
 @app.get("/")
 def serve_homepage():
-    return {}
+    return RedirectResponse("/docs")
 
 
 def bytes_to_base64(bytes_str):

@@ -64,8 +64,12 @@ build {
   sources = ["source.scaleway.debian"]
 
   provisioner "shell" {
-    inline = ["apt update && apt upgrade -y"]
+    inline = [
+      "apt update && apt upgrade -y",
+      "apt install certbot rsync -y"
+    ]
   }
+
 
   provisioner "shell" {
     script = "./install-docker.sh"
@@ -92,6 +96,15 @@ build {
   provisioner "file" {
     source = "./frontend.service"
     destination = "/etc/systemd/system/frontend.service"
+  }
+
+  provisioner "file" {
+    source = "./run.sh"
+    destination = "/root/run.sh"
+  }
+
+  provisioner "shell" {
+    inline = ["chmod +x /root/run.sh"]
   }
 
   provisioner "shell" {
