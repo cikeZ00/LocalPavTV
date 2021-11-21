@@ -29,6 +29,11 @@ resource "scaleway_object_bucket" "replay_files" {
   acl = "public-read"
 }
 
+resource "scaleway_object_bucket" "files_for_download" {
+  name = "tv.pavlovhosting.com-files-for-download"
+  acl = "public-read"
+}
+
 data "scaleway_instance_image" "mitm_server" {
   architecture = "x86_64"
   name = "mitm-server"
