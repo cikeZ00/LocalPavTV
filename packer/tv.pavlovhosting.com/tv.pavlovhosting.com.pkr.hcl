@@ -43,6 +43,11 @@ variable replay_files_bucket_name {
   default = env("REPLAY_FILES_BUCKET_NAME")
 }
 
+variable files_for_download_bucket_name {
+  type = string
+  default = env("FILES_FOR_DOWNLOAD_BUCKET_NAME")
+}
+
 source "scaleway" "debian" {
   access_key = "${var.scw_access_key}"
   secret_key = "${var.scw_secret_key}"
@@ -78,7 +83,8 @@ build {
       "PRIVATE_KEY=${var.private_key}",
       "BUCKET_REGION=${var.bucket_region}",
       "IP_STATE_BUCKET_NAME=${var.ip_state_bucket_name}",
-      "REPLAY_FILES_BUCKET_NAME=${var.replay_files_bucket_name}"
+      "REPLAY_FILES_BUCKET_NAME=${var.replay_files_bucket_name}",
+      "FILES_FOR_DOWNLOAD_BUCKET_NAME=${var.files_for_download_bucket_name}"
     ]
     inline = ["envsubst < /tmp/environment.txt > /root/environment.txt"]
   }

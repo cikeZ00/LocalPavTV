@@ -5,6 +5,7 @@ import uvicorn
 import base64
 import boto3
 from fastapi import FastAPI, HTTPException, Response, File, Request
+from fastapi.responses import HTMLResponse
 from cryptography.fernet import Fernet
 
 PRIVATE_KEY = os.environ.get("PRIVATE_KEY")
@@ -13,6 +14,7 @@ SCW_ACCESS_KEY = os.environ.get("SCW_ACCESS_KEY")
 SCW_SECRET_KEY = os.environ.get("SCW_SECRET_KEY")
 IP_STATE_BUCKET_NAME = os.environ.get("IP_STATE_BUCKET_NAME")
 REPLAY_FILES_BUCKET_NAME = os.environ.get("REPLAY_FILES_BUCKET_NAME")
+FILES_FOR_DOWNLOAD_BUCKET_NAME = os.environ.get("FILES_FOR_DOWNLOAD_BUCKET_NAME")
 
 SERVER = "http://tv.pavlov-vr.com"
 
@@ -231,6 +233,34 @@ def whoami(request: Request):
     return {
         "ip": request.client.host
     }
+
+
+@app.get("/all_recordings")
+def all_recordings_html():
+    anchor_list = ""
+    for s3_object in resource.Bucket(FILES_FOR_DOWNLOAD_BUCKET_NAME).objects.all():
+        if s3_object.key.endswith(".pavlovtv"):
+            name = s3_object.key.split("/")[1]
+            anchor_list = \
+                anchor_list + f"<li><a href='https://pavlovtv-files-for-download.s3-website.fr-par.scw.cloud//{s3_object.key}'>{name}</a></li>"
+    return HTMLResponse(
+        f"""
+        <!doctype html>
+        <html>
+        <head>
+        <title>All recordings</title>
+        </head>
+        <body>
+        <ol>
+        """
+        + anchor_list +
+        """
+        </ol>
+        With ❤ by <a href="//lucy.sh">Lucy</a>
+        </body>
+        </html>
+        """
+    )
 
 
 if __name__ == "__main__":
