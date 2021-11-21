@@ -253,7 +253,7 @@ def download_replay(replay_id: str):
     # Serve file
     gamemode = meta.json()["gameMode"]
     replayMap = findAllResponse["friendlyName"].strip()
-    timestamp = str(time.time())
+    timestamp = str(int(time.time()))
 
     file_content = str.encode("1 tv.pavlovhosting.com\n") + encrypted_content
     num_players = str(len(findAllResponse["users"]))
