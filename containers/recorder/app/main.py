@@ -4,6 +4,8 @@ import requests
 import base64
 import boto3
 import time
+
+from botocore.exceptions import ClientError
 from fastapi import FastAPI, HTTPException
 from cryptography.fernet import Fernet
 from requests import HTTPError
@@ -36,6 +38,37 @@ def base64_to_bytes(base64_str):
     return base64.b64decode(base64_str)
 
 
+def does_key_exist(bucket, key):
+    try:
+        bucket.Object(key).get()
+        return True
+    except ClientError as ex:
+        if ex.response["Error"]["Code"] == "NoSuchKey":
+            return False
+        else:
+            raise ex
+
+
+@app.post("/")
+def cron():
+    # Get all the current recordings from pavlov TV
+    all_recordings = requests.get(SERVER + "/find/any?dummy=0")
+    all_recordings.raise_for_status()
+    # Find any that aren't being downloaded and have players
+    for recording in all_recordings["replays"]:
+        if len(recording["users"]) > 0:
+            replay_id = recording["_id"]
+            if not does_key_exist(
+                resource.Bucket(FILES_FOR_DOWNLOAD_BUCKET_NAME),
+                f"{replay_id}/in_progress.txt"
+            ):
+                # We'll handle this one
+                download_replay(replay_id)
+    return {
+        "ok": True
+    }
+
+
 @app.get("/download/{replay_id}")
 def download_replay(replay_id: str):
     # To download a replay we need to collect
@@ -64,6 +97,12 @@ def download_replay(replay_id: str):
             status_code=400,
             detail="A recording must still be available to download it."
         )
+
+    # Mark that we're going to download this recording
+    resource.Bucket(FILES_FOR_DOWNLOAD_BUCKET_NAME).put_object(
+        f"{replay_id}/in_progress.txt",
+        str(time.time())
+    )
 
     replay_data["find"] = findAllResponse
 
@@ -198,7 +237,7 @@ def download_replay(replay_id: str):
     file_content = str.encode("1 tv.pavlovhosting.com\n") + encrypted_content
 
     resource.Bucket(FILES_FOR_DOWNLOAD_BUCKET_NAME).put_object(
-        f"{gamemode}-{replayMap}-{replay_id}.pavlovtv",
+        f"{replay_id}/{gamemode}-{replayMap}-{replay_id}.pavlovtv",
         file_content
     )
 
