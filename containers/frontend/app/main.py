@@ -249,10 +249,16 @@ def all_recordings_html():
     for _, v in sorted(entries.items()):
         anchor_list = v + anchor_list
     return HTMLResponse(
-        f"""
+        """
         <!doctype html>
         <html>
         <head>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Open+Sans&display=swap');
+            body{
+                font-family: 'Open Sans', sans-serif;
+            }
+        </style>
         <title>All recordings</title>
         </head>
         <body>
@@ -261,7 +267,9 @@ def all_recordings_html():
         + anchor_list +
         """
         </ol>
-        With ❤ by <a href="//lucy.sh">Lucy</a>
+        Recordings are retained for 24 hours, so download them before they're gone!
+        <br/>
+        With ❤️ by <a href="//lucy.sh">Lucy</a>
         </body>
         </html>
         """
