@@ -64,9 +64,10 @@ def cron():
                 f"{replay_id}/in_progress.txt"
             ):
                 # We'll handle this one
-                download_replay(replay_id)
+                return download_replay(replay_id)
     return {
-        "ok": True
+        "ok": True,
+        "message": "Nothing to do"
     }
 
 
