@@ -238,11 +238,14 @@ def whoami(request: Request):
 @app.get("/all_recordings")
 def all_recordings_html():
     anchor_list = ""
+    entries = {}
     for s3_object in resource.Bucket(FILES_FOR_DOWNLOAD_BUCKET_NAME).objects.all():
         if s3_object.key.endswith(".pavlovtv"):
             name = s3_object.key.split("/")[1]
-            anchor_list = \
-                anchor_list + f"<li><a href='https://pavlovtv-files-for-download.s3-website.fr-par.scw.cloud//{s3_object.key}'>{name}</a></li>"
+            timestamp = name.split(" ")[0]
+            entries[timestamp] = f"<li><a href='https://pavlovtv-files-for-download.s3-website.fr-par.scw.cloud//{s3_object.key}'>{name}</a></li>"
+    for _, v in sorted(entries.items()):
+        anchor_list = v + anchor_list
     return HTMLResponse(
         f"""
         <!doctype html>
