@@ -156,7 +156,7 @@ def download_replay(replay_id: str):
 
     if current_state != "Recorded":
         chunk_number = startDownload_json["numChunks"]
-        confirmed_chunks = chunk_number
+        confirmed_chunks = startDownload_json["numChunks"] - 1
         # Need to buffer for more chunks
         # We will wait up to 5 minutes for another chunk to become available
         time_since_last_good_chunk = time.time()
