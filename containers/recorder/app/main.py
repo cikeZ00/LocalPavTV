@@ -219,15 +219,17 @@ def download_replay(replay_id: str):
 
         # Correct the stream headers
         for i in range(0, confirmed_chunks + 1):
+            print(f"Rewriting stream chunk {i} of {confirmed_chunks}...")
             # Get the current headers out
             headers_json = json.loads(
                 base64_to_bytes(
                     replay_files["stream." + str(i) + ".headers"]
                 )
             )
-            headers_json["Time"] = final_time
+            # Headers MUST be strings or the server will crash when serving them
+            headers_json["Time"] = str(final_time)
             headers_json["State"] = "Recorded"
-            headers_json["NumChunks"] = confirmed_chunks
+            headers_json["NumChunks"] = str(confirmed_chunks)
 
             replay_files["stream." + str(i) + ".headers"] = \
                 bytes_to_base64(json.dumps(headers_json).encode("utf-8"))
