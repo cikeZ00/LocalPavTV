@@ -9,3 +9,5 @@ You can then take a .pavlovtv file from the system frontend (see packer/tv.pavlo
 When you do so, the system puts the file in an S3 bucket, marks your IP address as wanting to replay that file and then when you open Pavlov TV the system will intercept the connection (as you've pointed DNS towards us) and serve just that file you uploaded
 
 Files are encrypted before being given to users, this is so that users don't have to worry about file reputation as long as they trust this service.
+
+Demo: https://tv.pavlovhosting.com/docs
