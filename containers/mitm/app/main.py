@@ -1,5 +1,7 @@
 import json
 import os
+import io
+import gzip
 
 import uvicorn
 from fastapi import FastAPI, Request
@@ -85,10 +87,19 @@ async def get_event_stream(event_id: str):
     
     byte_data = bytes(event["data"]["data"])
 
-    decoded_string = byte_data.decode("ascii", errors="ignore")
-    print(decoded_string)
-    
-    return Response(content=decoded_string, status_code=200, media_type="application/octet-stream")
+    # Gzip-compress the data
+    buffer = io.BytesIO()
+    with gzip.GzipFile(fileobj=buffer, mode="wb") as gz_file:
+        gz_file.write(byte_data)
+
+    compressed_data = buffer.getvalue()
+
+    return Response(
+        content=compressed_data,
+        status_code=200,
+        media_type="application/octet-stream",
+        headers={"Content-Encoding": "gzip"}
+    )
 
 
 @app.get("/find/any")
