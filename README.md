@@ -78,6 +78,6 @@ Import the fake root certificate into the proxy.
 
 Enable DNS Spoofing and spoof ``tv.vankrupt.net`` to point to your mitm servers IP.
 
-Open up PavlovTV, it should not purely make requests to our local mitm server.
+Open up PavlovTV, it should now purely make requests to our local mitm server.
 
 
