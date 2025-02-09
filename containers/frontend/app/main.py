@@ -77,7 +77,7 @@ def download_replay(replay_id: str):
     meta.raise_for_status()
     replay_data["meta"] = meta.json()
     
-    events = requests.get(f"{SERVER}/replay/{replay_id}/event", verify=False, headers=HEADERS)
+    events = requests.get(f"{SERVER}/replay/{replay_id}/event?group=checkpoint", verify=False, headers=HEADERS)
     events.raise_for_status()
     replay_data["events"] = events.json()
     
