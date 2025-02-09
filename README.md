@@ -68,7 +68,7 @@ server {
 }
 ```
 
-Replace ``path_to_fake_cert`` and ``path_to_fake_key`` with the path to wherever you places the fake certificate and key we generated earlier.
+Replace ``path_to_fake_cert`` and ``path_to_fake_key`` with the path to wherever you placed the fake certificate and key we generated earlier.
 
 Use the api on port ``3000`` to list replays and download them.
 
