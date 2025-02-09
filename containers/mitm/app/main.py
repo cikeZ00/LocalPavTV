@@ -73,14 +73,19 @@ async def get_replay_file(replay_id: str, file_name: str):
         return StreamingResponse(response.aiter_raw(), background=BackgroundTask(response.aclose), headers=response.headers)
 
 @app.get("/replay/{replay_id}/event")
-async def get_events(replay_id: str):
+async def get_events(replay_id: str, group: str = "checkpoints"):
     replay_path = os.path.join(DATA_DIR, replay_id, "metadata.json")
     if os.path.exists(replay_path):
         with open(replay_path, "r") as file:
             replay_data = json.load(file)
-            return replay_data["events"]
+            if group == "checkpoints":
+                return replay_data["events"]
+            elif group == "Pavlov":
+                return replay_data["events_pavlov"]
+            else:
+                return {"error": "Invalid group specified"}
     else:
-        request = http_client.build_request("GET", f"/replay/{replay_id}/event")
+        request = http_client.build_request("GET", f"/replay/{replay_id}/event?group={group}")
         response = await http_client.send(request, stream=True)
         return StreamingResponse(response.aiter_raw(), background=BackgroundTask(response.aclose), headers=response.headers)
 

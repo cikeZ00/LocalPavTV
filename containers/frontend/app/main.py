@@ -80,6 +80,10 @@ def download_replay(replay_id: str):
     events = requests.get(f"{SERVER}/replay/{replay_id}/event?group=checkpoint", verify=False, headers=HEADERS)
     events.raise_for_status()
     replay_data["events"] = events.json()
+
+    events_pavlov = requests.get(f"{SERVER}/replay/{replay_id}/event?group=Pavlov", verify=False, headers=HEADERS)
+    events_pavlov.raise_for_status()
+    replay_data["events_pavlov"] = events_pavlov.json()
     
     replay_dir = os.path.join(DATA_DIR, replay_id)
     os.makedirs(replay_dir, exist_ok=True)
