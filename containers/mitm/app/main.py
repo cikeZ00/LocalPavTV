@@ -69,10 +69,9 @@ async def get_event_stream(event_id: str):
     replay_id = get_replay_id_by_event(event_id)
     
     if not replay_id:
-        return Response(content="Event not found", status_code=404)
+        return Response(content=f"Event not found: {replay_id}", status_code=404)
     
     metadata_path = os.path.join(DATA_DIR, replay_id, "metadata.json")
-    timing_path = os.path.join(DATA_DIR, replay_id, "timing.json")
 
     with open(metadata_path, "r") as file:
         metadata = json.load(file)
@@ -82,30 +81,12 @@ async def get_event_stream(event_id: str):
 
     if not event:
         return Response(content="Event data not found", status_code=404)
-
-    meta_value = int(event["meta"])-1
-    file_name = f"stream.{meta_value}" 
-
-    file_path = os.path.join(DATA_DIR, replay_id, file_name)
-
-    headers = {}
-    if os.path.exists(timing_path):
-        with open(timing_path, "r") as timing_file:
-            timing_data = json.load(timing_file)
-            if file_name.startswith("stream."):
-                index = int(file_name.split(".")[1])
-                if index < len(timing_data):
-                    headers = {
-                        "numchunks": str(timing_data[index].get("numchunks")),
-                        "time": str(timing_data[index].get("time")),
-                        "state": timing_data[index].get("state"),
-                        "mtime1": str(timing_data[index].get("mtime1")),
-                        "mtime2": str(timing_data[index].get("mtime2"))
-                    }
     
-    if os.path.exists(file_path):
-        with open(file_path, "rb") as file:
-            return Response(content=file.read(), status_code=200, headers=headers)
+    byte_data = bytes(event["data"]["data"])
+
+    decoded_string = byte_data.decode("utf-16le", errors="ignore")
+    
+    return Response(content=decoded_string, status_code=200, media_type="application/octet-stream")
 
 
 @app.get("/find/any")
