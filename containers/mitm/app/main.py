@@ -85,7 +85,7 @@ async def get_event_stream(event_id: str):
     
     byte_data = bytes(event["data"]["data"])
 
-    decoded_string = byte_data.decode("utf-8", errors="ignore")
+    decoded_string = byte_data.decode("ascii", errors="ignore")
     print(decoded_string)
     
     return Response(content=decoded_string, status_code=200, media_type="application/octet-stream")
