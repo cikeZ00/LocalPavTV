@@ -28,6 +28,26 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+# In-memory index
+global_index = {}
+
+def update_global_index(replay_id):
+    """Updates the global index in memory when a replay is downloaded."""
+    replay_path = os.path.join(DATA_DIR, replay_id, "metadata.json")
+    
+    if os.path.exists(replay_path):
+        with open(replay_path, "r") as file:
+            replay_data = json.load(file)
+            
+            for event in replay_data.get("events", {}).get("events", []):
+                global_index[event["id"]] = replay_id 
+
+
+
+def get_replay_id_by_event(event_id):
+    """Fetch replay ID from in-memory index."""
+    return global_index.get(event_id)
+
 http_client = AsyncClient(base_url="https://tv.vankrupt.net:443/", verify=False)
 
 def get_all_replays():
@@ -43,6 +63,50 @@ def get_all_replays():
 @app.get("/")
 def home():
     return RedirectResponse("https://tv.vankrupt.net")
+
+@app.get("/event/{event_id}")
+async def get_event_stream(event_id: str):
+    replay_id = get_replay_id_by_event(event_id)
+    
+    if not replay_id:
+        return Response(content="Event not found", status_code=404)
+    
+    metadata_path = os.path.join(DATA_DIR, replay_id, "metadata.json")
+    timing_path = os.path.join(DATA_DIR, replay_id, "timing.json")
+
+    with open(metadata_path, "r") as file:
+        metadata = json.load(file)
+    events = metadata.get("events", {}).get("events", [])
+    
+    event = next((e for e in events if e["id"] == event_id), None)
+
+    if not event:
+        return Response(content="Event data not found", status_code=404)
+
+    meta_value = int(event["meta"])-1
+    file_name = f"stream.{meta_value}" 
+
+    file_path = os.path.join(DATA_DIR, replay_id, file_name)
+
+    headers = {}
+    if os.path.exists(timing_path):
+        with open(timing_path, "r") as timing_file:
+            timing_data = json.load(timing_file)
+            if file_name.startswith("stream."):
+                index = int(file_name.split(".")[1])
+                if index < len(timing_data):
+                    headers = {
+                        "numchunks": str(timing_data[index].get("numchunks")),
+                        "time": str(timing_data[index].get("time")),
+                        "state": timing_data[index].get("state"),
+                        "mtime1": str(timing_data[index].get("mtime1")),
+                        "mtime2": str(timing_data[index].get("mtime2"))
+                    }
+    
+    if os.path.exists(file_path):
+        with open(file_path, "rb") as file:
+            return Response(content=file.read(), status_code=200, headers=headers)
+
 
 @app.get("/find/any")
 async def list_replays():
@@ -112,10 +176,12 @@ async def start_downloading(replay_id: str, user: str):
     if os.path.exists(replay_path):
         with open(replay_path, "r") as file:
             replay_data = json.load(file)
+            update_global_index(replay_id)
             return replay_data["start_downloading"]
     else:
         request = http_client.build_request("POST", f"/replay/{replay_id}/startDownloading?user={user}")
         response = await http_client.send(request, stream=True)
+        update_global_index(replay_id)
         return StreamingResponse(response.aiter_raw(), background=BackgroundTask(response.aclose), headers=response.headers)
 
 @app.post("/replay/{replay_id}/viewer/{viewer_id}")
