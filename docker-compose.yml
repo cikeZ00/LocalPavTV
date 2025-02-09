@@ -1,0 +1,12 @@
+version: "3.8"
+services:
+  frontend:
+    build: ./containers/frontend
+    ports:
+      - "3000:8080"
+    environment:
+      - ENV=local
+  mitm:
+    build: ./containers/mitm
+    ports:
+      - "4000:8080"
