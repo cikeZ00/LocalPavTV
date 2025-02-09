@@ -73,12 +73,12 @@ async def get_replay_file(replay_id: str, file_name: str):
         return StreamingResponse(response.aiter_raw(), background=BackgroundTask(response.aclose), headers=response.headers)
 
 @app.get("/replay/{replay_id}/event")
-async def get_events(replay_id: str, group: str = "checkpoints"):
+async def get_events(replay_id: str, group: str = "checkpoint"):
     replay_path = os.path.join(DATA_DIR, replay_id, "metadata.json")
     if os.path.exists(replay_path):
         with open(replay_path, "r") as file:
             replay_data = json.load(file)
-            if group == "checkpoints":
+            if group == "checkpoint":
                 return replay_data["events"]
             elif group == "Pavlov":
                 return replay_data["events_pavlov"]
