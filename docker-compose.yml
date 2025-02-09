@@ -3,10 +3,18 @@ services:
   frontend:
     build: ./containers/frontend
     ports:
-      - "3000:8080"
+      - "3000:80"
     environment:
       - ENV=local
+    volumes:
+      - replay_data:/app/data
+
   mitm:
     build: ./containers/mitm
     ports:
-      - "4000:8080"
+      - "4000:80"
+    volumes:
+      - replay_data:/app/data
+
+volumes:
+  replay_data:
