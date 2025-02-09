@@ -21,14 +21,14 @@ openssl x509 -req -in pav.csr -CA fake-root.crt -CAkey fake-root.key -CAcreatese
 ```
 
 You're going to need nginx configured to reverse proxy the mitm service to ``tv.vankrupt.net`` (replace ``mitm_ip`` with the IP address of the machine where mitm is running):
-```map $http_upgrade $connection_upgrade {
+```
+map $http_upgrade $connection_upgrade {
     default upgrade;
     ''      close;
 }
 
 server {
     listen 80;
-    # Update this line to be your domain
     server_name tv.vankrupt.net;
 
     # These shouldn't need to be changed
@@ -41,7 +41,6 @@ server {
 }
 
 server {
-    # Update this line to be your domain
     server_name tv.vankrupt.net;
 
     # Ensure these lines point to your SSL certificate and key
@@ -62,7 +61,7 @@ server {
     proxy_set_header X-Forwarded-Proto $scheme;
     proxy_set_header X-Forwarded-Ssl on;
     
-    
+    # Change mitm_ip
     location / {
         proxy_pass http://mitm_ip:4000;
     }
@@ -73,7 +72,8 @@ Replace ``path_to_fake_cert`` and ``path_to_fake_key`` with the path to wherever
 
 Use the api on port ``3000`` to list replays and download them.
 
-Download a proxy server. (I used Charles)
+Download a proxy server, I used Charles.
+
 Import the fake root certificate into the proxy.
 
 Enable DNS Spoofing and spoof ``tv.vankrupt.net`` to point to your mitm servers IP.
