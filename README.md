@@ -1,13 +1,83 @@
-# tv.pavlovhosting.com
+# LocalPavTV
 
 This is a system that allows you to record and play back Pavlov VR competitive games at a later time.
 
-To make this work you override your computers DNS records so that tv.pavlov-vr.com points towards the recorder server (see packer/mitm.tv.pavlovhosting.com)
+## Deployment steps:
 
-You can then take a .pavlovtv file from the system frontend (see packer/tv.pavlovhosting.com and containers/frontend) and re-upload it to the server
+You need to setup docker.
+Clone this repository and run ``sudo docker compose up -d``, this will build the frontend and mitm images and start the containers.
+You can access the frontend api on port ``3000``.
 
-When you do so, the system puts the file in an S3 bucket, marks your IP address as wanting to replay that file and then when you open Pavlov TV the system will intercept the connection (as you've pointed DNS towards us) and serve just that file you uploaded
+Generate fake ssl certificates.
 
-Files are encrypted before being given to users, this is so that users don't have to worry about file reputation as long as they trust this service.
+```
+openssl genrsa -out fake-root.key 2048
+openssl req -x509 -new -nodes -key fake-root.key -sha256 -days 1024 -out fake-root.crt -subj "/CN=Fake Root CA"
 
-Demo: https://tv.pavlovhosting.com/docs
+openssl genrsa -out pav.key 2048
+openssl req -new -key pav.key -out pav.csr -subj "/CN=tv.vankrupt.net"
+
+openssl x509 -req -in pav.csr -CA fake-root.crt -CAkey fake-root.key -CAcreateserial -out pav.crt -days 1024 -sha256
+```
+
+You're going to need nginx configured to reverse proxy the mitm service to ``tv.vankrupt.net`` (replace ``mitm_ip`` with the IP address of the machine where mitm is running):
+```map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+server {
+    listen 80;
+    # Update this line to be your domain
+    server_name tv.vankrupt.net;
+
+    # These shouldn't need to be changed
+    return 301 https://$server_name$request_uri;
+    
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+}
+
+server {
+    # Update this line to be your domain
+    server_name tv.vankrupt.net;
+
+    # Ensure these lines point to your SSL certificate and key
+    ssl_certificate path_to_fake_cert;
+    ssl_certificate_key path_to_fake_key;
+
+
+    # These shouldn't need to be changed
+    listen 443;
+    proxy_set_header Referer $http_referer;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Real-Port $remote_port;
+    proxy_set_header X-Forwarded-Host $host:$remote_port;
+    proxy_set_header X-Forwarded-Server $host;
+    proxy_set_header X-Forwarded-Port $remote_port;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Ssl on;
+    
+    
+    location / {
+        proxy_pass http://mitm_ip:4000;
+    }
+}
+```
+
+Replace ``path_to_fake_cert`` and ``path_to_fake_key`` with the path to wherever you places the fake certificate and key we generated earlier.
+
+Use the api on port ``3000`` to list replays and download them.
+
+Download a proxy server. (I used Charles)
+Import the fake root certificate into the proxy.
+
+Enable DNS Spoofing and spoof ``tv.vankrupt.net`` to point to your mitm servers IP.
+
+Open up PavlovTV, it should not purely make requests to our local mitm server.
+
+
