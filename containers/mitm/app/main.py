@@ -46,6 +46,7 @@ def update_global_index(replay_id):
 
 def get_replay_id_by_event(event_id):
     """Fetch replay ID from in-memory index."""
+    print(global_index)
     return global_index.get(event_id)
 
 http_client = AsyncClient(base_url="https://tv.vankrupt.net:443/", verify=False)
@@ -84,7 +85,8 @@ async def get_event_stream(event_id: str):
     
     byte_data = bytes(event["data"]["data"])
 
-    decoded_string = byte_data.decode("utf-16le", errors="ignore")
+    decoded_string = byte_data.decode("utf-8", errors="ignore")
+    print(decoded_string)
     
     return Response(content=decoded_string, status_code=200, media_type="application/octet-stream")
 
