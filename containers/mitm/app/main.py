@@ -13,11 +13,11 @@ DATA_DIR = "./data"
 
 allowed_origins = [
     "http://localhost",
-    "https://tv.cikez.net"
+    "https://tv.vankrupt.net"
 ]
 
 app = FastAPI(
-    title="mitm.tv.cikez.net"
+    title="mitm.tv.vankrupt.net"
 )
 
 app.add_middleware(
@@ -42,7 +42,7 @@ def get_all_replays():
 
 @app.get("/")
 def home():
-    return RedirectResponse("https://tv.cikez.net")
+    return RedirectResponse("https://tv.vankrupt.net")
 
 @app.get("/find/any")
 async def list_replays():
@@ -100,9 +100,9 @@ async def start_downloading(replay_id: str, user: str):
 def replay_viewer():
     return Response(content="", status_code=204)
 
-@app.get("/__tv.cikez.net/relay")
+@app.get("/__tv.vankrupt.net/relay")
 def relay():
-    return {"__tv.cikez.net/relay": True}
+    return {"__tv.vankrupt.net/relay": True}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8080)
