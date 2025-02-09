@@ -91,9 +91,25 @@ def download_replay(replay_id: str):
     with open(os.path.join(replay_dir, "replay.header"), "wb") as f:
         f.write(requests.get(f"{SERVER}/replay/{replay_id}/file/replay.header", headers=HEADERS).content)
     
+    timing_data = []
+
     for i in range(startDownload_json["numChunks"]):
+        stream_response = requests.get(f"{SERVER}/replay/{replay_id}/file/stream.{i}", headers=HEADERS)
+        stream_response.raise_for_status()
+        
         with open(os.path.join(replay_dir, f"stream.{i}"), "wb") as f:
-            f.write(requests.get(f"{SERVER}/replay/{replay_id}/file/stream.{i}", headers=HEADERS).content)
+            f.write(stream_response.content)
+        
+        timing_data.append({
+            "numchunks": stream_response.headers.get("numchunks"),
+            "time": stream_response.headers.get("time"),
+            "state": "Recorded",
+            "mtime1": stream_response.headers.get("mtime1"),
+            "mtime2": stream_response.headers.get("mtime2")
+        })
+    
+    with open(os.path.join(replay_dir, "timing.json"), "w") as f:
+        json.dump(timing_data, f)
     
     with open(os.path.join(replay_dir, "metadata.json"), "w") as f:
         json.dump(replay_data, f)
@@ -132,4 +148,4 @@ def whoami(request: Request):
     return {"ip": request.client.host}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8080)
+    uvicorn.run(app, host="127.0.0.1", port=8081)
