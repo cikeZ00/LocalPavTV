@@ -4,7 +4,7 @@ import io
 import gzip
 
 import uvicorn
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse, StreamingResponse, Response
 from httpx import AsyncClient

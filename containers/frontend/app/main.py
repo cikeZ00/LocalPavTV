@@ -42,6 +42,17 @@ def list_interesting_games():
     games = games_list.json()
     return [replay for replay in games["replays"] if replay["users"] and not replay["live"]]
 
+@app.get("/check/{replay_id}")
+def check_replay(replay_id: str):
+    if not replay_id.isalnum():
+        raise HTTPException(status_code=404)
+    
+    replay_path = os.path.join(DATA_DIR, replay_id)
+    if os.path.exists(replay_path):
+        return True
+    else:
+        return False
+
 @app.get("/download/{replay_id}")
 def download_replay(replay_id: str):
     if not replay_id.isalnum():
