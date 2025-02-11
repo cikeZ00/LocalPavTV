@@ -56,6 +56,7 @@ def get_all_replays():
             with open(replay_path, "r") as file:
                 replay_data = json.load(file)
                 replays.append(replay_data["find"])
+    replays.sort(key=lambda x: x["created"], reverse=True)
     return replays
 
 @app.get("/")
