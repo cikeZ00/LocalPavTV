@@ -42,14 +42,9 @@ def update_global_index(replay_id):
             replay_data = json.load(file)
             
             for event in replay_data.get("events", {}).get("events", []):
-                global_index[event["id"]] = replay_id 
+                global_index[event["id"]] = event["data"]["data"]
 
 
-
-def get_replay_id_by_event(event_id):
-    """Fetch replay ID from in-memory index."""
-    print(global_index)
-    return global_index.get(event_id)
 
 http_client = AsyncClient(base_url="https://tv.vankrupt.net:443/", verify=False)
 
@@ -69,23 +64,12 @@ def home():
 
 @app.get("/event/{event_id}")
 async def get_event_stream(event_id: str):
-    replay_id = get_replay_id_by_event(event_id)
-    
-    if not replay_id:
-        return Response(content=f"Event not found: {replay_id}", status_code=404)
-    
-    metadata_path = os.path.join(DATA_DIR, replay_id, "metadata.json")
-
-    with open(metadata_path, "r") as file:
-        metadata = json.load(file)
-    events = metadata.get("events", {}).get("events", [])
-    
-    event = next((e for e in events if e["id"] == event_id), None)
+    event = global_index.get(event_id)
 
     if not event:
         return Response(content="Event data not found", status_code=404)
     
-    byte_data = bytes(event["data"]["data"])
+    byte_data = bytes(event)
 
     # Gzip-compress the data
     buffer = io.BytesIO()
@@ -170,6 +154,7 @@ async def start_downloading(replay_id: str, user: str):
     if os.path.exists(replay_path):
         with open(replay_path, "r") as file:
             replay_data = json.load(file)
+            global_index.clear()
             update_global_index(replay_id)
             return replay_data["start_downloading"]
     else:

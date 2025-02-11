@@ -59,7 +59,6 @@ def download_replay(replay_id: str):
         raise HTTPException(status_code=404)
 
     replay_data = {}
-    replay_files = {}
     
     findAll = requests.get(f"{SERVER}/find/any?dummy=0", verify=False, headers=HEADERS)
     findAll.raise_for_status()
@@ -145,18 +144,6 @@ def upload(request: Request, file: bytes = File(...)):
         json.dump(json_payload["data"], f)
     
     return {"ok": True}
-
-@app.post("/reset")
-def reset(request: Request):
-    ip_address = request.client.host
-    ip_file = os.path.join(DATA_DIR, f"{ip_address}.json")
-    if os.path.exists(ip_file):
-        os.remove(ip_file)
-    return {"ok": True}
-
-@app.get("/whoami")
-def whoami(request: Request):
-    return {"ip": request.client.host}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8081)
