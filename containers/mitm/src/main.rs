@@ -74,6 +74,7 @@ async fn list_replays(state: web::Data<AppState>) -> Result<HttpResponse, Error>
                     if let Ok(file) = fs::File::open(&replay_path) {
                         if let Ok(replay_data) = serde_json::from_reader::<_, Value>(file) {
                             if let Some(find_val) = replay_data.get("find") {
+                                println!("Found replay: {}", find_val);
                                 replays.push(find_val.clone());
                             }
                         }
