@@ -21,10 +21,10 @@ COPY . .
 RUN cargo build --release
 
 # ---------- Stage 2: Create a slim runtime image ----------
-FROM debian:buster-slim
+FROM debian:bullseye-slim
 
 # Install necessary certificates.
-RUN apt-get update && apt-get install -y ca-certificates libc6 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 
 # Copy the compiled binary from the builder stage.
 COPY --from=builder /app/target/release/mitm /usr/local/bin/mitm
