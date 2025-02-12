@@ -1,7 +1,36 @@
-FROM tiangolo/uvicorn-gunicorn-fastapi:python3.9
+# ---------- Stage 1: Build ----------
+FROM rust:1.70 as builder
 
-COPY ./app /app
+# Set the working directory inside the container.
+WORKDIR /app
 
-RUN pip install -r /app/requirements.txt
+# Copy Cargo manifests first to leverage Docker layer caching.
+COPY Cargo.toml Cargo.lock ./
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80", "--workers", "1"]
+# Create a dummy main file so that dependency caching can occur.
+RUN mkdir src && echo "fn main() {}" > src/main.rs
+
+# Build dependencies (this step is cached if Cargo.toml/Cargo.lock remain unchanged)
+RUN cargo build --release
+
+# Remove the dummy main file and copy the full source code.
+RUN rm -f src/main.rs
+COPY . .
+
+# Build the actual application.
+RUN cargo build --release
+
+# ---------- Stage 2: Create a slim runtime image ----------
+FROM debian:buster-slim
+
+# Install necessary certificates.
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+
+# Copy the compiled binary from the builder stage.
+COPY --from=builder /app/target/release/mitm /usr/local/bin/mitm
+
+# Expose the port that your application listens on.
+EXPOSE 8080
+
+# Run the binary.
+CMD ["mitm"]

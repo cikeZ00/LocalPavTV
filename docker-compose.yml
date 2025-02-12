@@ -10,7 +10,7 @@ services:
   mitm:
     build: ./containers/mitm
     ports:
-      - "4000:80"
+      - "4000:8080"
     volumes:
       - replay_data:/app/data
 
