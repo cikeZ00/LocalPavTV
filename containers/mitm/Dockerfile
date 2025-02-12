@@ -15,5 +15,6 @@ RUN mv ./target/release/mitm ./app
 
 FROM debian:stable-slim AS runtime
 WORKDIR /app
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /app/app /usr/local/bin/
 ENTRYPOINT ["/usr/local/bin/app"]
