@@ -1,36 +1,19 @@
-# ---------- Stage 1: Build ----------
-FROM rust:1.83.0 as builder
-
-# Set the working directory inside the container.
+FROM lukemathwalker/cargo-chef:latest as chef
 WORKDIR /app
 
-# Copy Cargo manifests first to leverage Docker layer caching.
-COPY Cargo.toml ./
+FROM chef AS planner
+COPY ./Cargo.toml ./Cargo.lock ./
+COPY ./src ./src
+RUN cargo chef prepare
 
-# Create a dummy main file so that dependency caching can occur.
-RUN mkdir src && echo "fn main() {}" > src/main.rs
-
-# Build dependencies
-RUN cargo build --release
-
-# Remove the dummy main file and copy the full source code.
-RUN rm -f src/main.rs
+FROM chef AS builder
+COPY --from=planner /app/recipe.json .
+RUN cargo chef cook --release
 COPY . .
-
-# Build the actual application.
 RUN cargo build --release
+RUN mv ./target/release/mitm ./app
 
-# ---------- Stage 2: Create a slim runtime image ----------
-FROM debian:bookworm-slim
-
-# Install necessary certificates.
-RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
-
-# Copy the compiled binary from the builder stage.
-COPY --from=builder /app/target/release/mitm /usr/local/bin/mitm
-
-# Expose the port that your application listens on.
-EXPOSE 8080
-
-# Run the binary.
-CMD ["mitm"]
+FROM debian:stable-slim AS runtime
+WORKDIR /app
+COPY --from=builder /app/app /usr/local/bin/
+ENTRYPOINT ["/usr/local/bin/app"]
