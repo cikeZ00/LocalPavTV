@@ -5,12 +5,12 @@ FROM rust:1.70 as builder
 WORKDIR /app
 
 # Copy Cargo manifests first to leverage Docker layer caching.
-COPY Cargo.toml Cargo.lock ./
+COPY Cargo.toml ./
 
 # Create a dummy main file so that dependency caching can occur.
 RUN mkdir src && echo "fn main() {}" > src/main.rs
 
-# Build dependencies (this step is cached if Cargo.toml/Cargo.lock remain unchanged)
+# Build dependencies
 RUN cargo build --release
 
 # Remove the dummy main file and copy the full source code.
