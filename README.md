@@ -5,11 +5,22 @@ This is a system that allows you to record and play back Pavlov VR competitive g
 ## Deployment steps:
 
 You need to setup docker.
+
+### Automatic setup
+
+Clone the repositoery.
+
+Run: ``docker compose -f docker-compose-full.yml up``
+You'll need to have the following ports unused: 80, 443, 3000, 4000
+
+
+### Manual setup
 Clone this repository and run ``sudo docker compose up -d``, this will build the frontend and mitm images and start the containers.
+
 You can access the frontend api on port ``3000``.
 
-Generate fake ssl certificates.
 
+Generate SSL Certs
 ```
 openssl genrsa -out fake-root.key 2048
 openssl req -x509 -new -nodes -key fake-root.key -sha256 -days 1024 -out fake-root.crt -subj "/CN=Fake Root CA"
@@ -69,6 +80,9 @@ server {
 ```
 
 Replace ``path_to_fake_cert`` and ``path_to_fake_key`` with the path to wherever you placed the fake certificate and key we generated earlier.
+
+
+### PavlovTV setup (Windows)
 
 Use the api on port ``3000`` to list replays and download them.
 
