@@ -7,8 +7,7 @@ use reqwest::Client;
 use serde::Deserialize;
 use serde_json::{json, Value};
 use std::collections::HashMap;
-use tokio::fs;
-use tokio::io::AsyncReadExt;
+use std::fs;
 use std::io::Write;
 use std::path::Path;
 use std::sync::Mutex;
@@ -64,56 +63,32 @@ fn update_global_index(state: &AppState, replay_id: &str) -> Result<(), Box<dyn 
 // --------------------------------------------------
 
 async fn list_replays(state: web::Data<AppState>) -> Result<HttpResponse, Error> {
-    let mut replays: Vec<Value> = Vec::new();
+    let mut replays = Vec::new();
     let data_dir = &state.data_dir;
-
-    // Open the directory asynchronously.
-    let mut dir = fs::read_dir(data_dir)
-        .await
-        .map_err(actix_web::error::ErrorInternalServerError)?;
-
-    // Process each directory entry one by one.
-    while let Some(entry) = dir
-        .next_entry()
-        .await
-        .map_err(actix_web::error::ErrorInternalServerError)?
-    {
-        let path = entry.path();
-
-        // Check if the entry is a directory.
-        if path.is_dir() {
-            let replay_path = path.join("metadata.json");
-
-            // Check if the metadata file exists.
-            if fs::metadata(&replay_path).await.is_ok() {
-                // Read the file contents asynchronously.
-                let mut file = fs::File::open(&replay_path)
-                    .await
-                    .map_err(actix_web::error::ErrorInternalServerError)?;
-                let mut data = Vec::new();
-                file.read_to_end(&mut data)
-                    .await
-                    .map_err(actix_web::error::ErrorInternalServerError)?;
-
-                // Parse the JSON and extract only the "find" field.
-                if let Ok(replay_data) = serde_json::from_slice::<Value>(&data) {
-                    if let Some(find_val) = replay_data.get("find") {
-                        println!("Found replay: {}", find_val);
-                        // Push only the minimal extracted data.
-                        replays.push(find_val.clone());
+    if let Ok(entries) = fs::read_dir(data_dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                let replay_path = path.join("metadata.json");
+                if replay_path.exists() {
+                    if let Ok(file) = fs::File::open(&replay_path) {
+                        if let Ok(replay_data) = serde_json::from_reader::<_, Value>(file) {
+                            if let Some(find_val) = replay_data.get("find") {
+                                println!("Found replay: {}", find_val);
+                                replays.push(find_val.clone());
+                            }
+                        }
                     }
                 }
             }
         }
     }
-
     // Sort replays descending by the "created" field.
     replays.sort_by(|a, b| {
         let a_created = a.get("created").and_then(|v| v.as_i64()).unwrap_or(0);
         let b_created = b.get("created").and_then(|v| v.as_i64()).unwrap_or(0);
         b_created.cmp(&a_created)
     });
-
     Ok(HttpResponse::Ok().json(json!({ "replays": replays })))
 }
 
