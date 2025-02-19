@@ -1,6 +1,4 @@
 import json
-import aiofiles
-import asyncio
 import os
 import io
 import gzip
@@ -50,26 +48,14 @@ def update_global_index(replay_id):
 
 http_client = AsyncClient(base_url="https://tv.vankrupt.net:443/", verify=False)
 
-async def read_replay_metadata(replay_id):
-    replay_path = os.path.join(DATA_DIR, replay_id, "metadata.json")
-    if os.path.exists(replay_path):
-        async with aiofiles.open(replay_path, "r") as file:
-            async for line in file:
-                if '"find":' in line:
-                    try:
-                        replay_data = json.loads(line.strip().rstrip(','))
-                        return replay_data["find"]
-                    except json.JSONDecodeError:
-                        return None
-    return None
-
-async def get_all_replays():
+def get_all_replays():
     replays = []
-    tasks = [read_replay_metadata(replay_id) for replay_id in os.listdir(DATA_DIR)]
-    results = await asyncio.gather(*tasks)
-    for result in results:
-        if result:
-            replays.append(result)
+    for replay_id in os.listdir(DATA_DIR):
+        replay_path = os.path.join(DATA_DIR, replay_id, "metadata.json")
+        if os.path.exists(replay_path):
+            with open(replay_path, "r") as file:
+                replay_data = json.load(file)
+                replays.append(replay_data["find"])
     replays.sort(key=lambda x: x["created"], reverse=True)
     return replays
 
@@ -103,7 +89,7 @@ async def get_event_stream(event_id: str):
 
 @app.get("/find/any")
 async def list_replays():
-    replays = await get_all_replays()
+    replays = get_all_replays()
     return {"replays": replays}
 
 @app.get("/meta/{replay_id}")
