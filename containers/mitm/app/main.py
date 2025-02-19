@@ -54,8 +54,11 @@ def get_all_replays():
         replay_path = os.path.join(DATA_DIR, replay_id, "metadata.json")
         if os.path.exists(replay_path):
             with open(replay_path, "r") as file:
-                replay_data = json.load(file)
-                replays.append(replay_data["find"])
+                for line in file:
+                    if '"find":' in line:
+                        replay_data = json.loads('{' + line.strip().rstrip(',') + '}')
+                        replays.append(replay_data["find"])
+                        break
     replays.sort(key=lambda x: x["created"], reverse=True)
     return replays
 
