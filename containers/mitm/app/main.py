@@ -49,13 +49,42 @@ def update_global_index(replay_id):
 http_client = AsyncClient(base_url="https://tv.vankrupt.net:443/", verify=False)
 
 def get_all_replays():
-    replays = []
-    for replay_id in os.listdir(DATA_DIR):
-        replay_path = os.path.join(DATA_DIR, replay_id, "metadata.json")
-        if os.path.exists(replay_path):
-            with open(replay_path, "r") as file:
-                replay_data = json.load(file)
-                replays.append(replay_data["find"])
+    cache_file = os.path.join(DATA_DIR, "find_cache.json")
+    
+    # Load the existing cache or start with an empty dict
+    if os.path.exists(cache_file):
+        with open(cache_file, "r") as cache:
+            find_cache = json.load(cache)
+    else:
+        find_cache = {}
+    
+    # Get current replay directories (ensure we only consider directories)
+    current_ids = [
+        replay_id for replay_id in os.listdir(DATA_DIR)
+        if os.path.isdir(os.path.join(DATA_DIR, replay_id))
+    ]
+    
+    # Remove cache entries for non-existent replays
+    for replay_id in list(find_cache.keys()):
+        if replay_id not in current_ids:
+            del find_cache[replay_id]
+    
+    # Add or update new replays into the cache
+    for replay_id in current_ids:
+        # Only add if not in cache (or you could re-read to update if desired)
+        if replay_id not in find_cache:
+            replay_path = os.path.join(DATA_DIR, replay_id, "metadata.json")
+            if os.path.exists(replay_path):
+                with open(replay_path, "r") as file:
+                    replay_data = json.load(file)
+                    find_cache[replay_id] = replay_data["find"]
+    
+    # Dump the updated cache file back to disk
+    with open(cache_file, "w") as cache:
+        json.dump(find_cache, cache)
+    
+    # Gather the "find" dicts, sort and return
+    replays = list(find_cache.values())
     replays.sort(key=lambda x: x["created"], reverse=True)
     return replays
 
