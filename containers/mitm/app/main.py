@@ -56,8 +56,11 @@ def get_all_replays():
             with open(replay_path, "r") as file:
                 for line in file:
                     if '"find":' in line:
-                        replay_data = json.loads('{' + line.strip().rstrip(',') + '}')
-                        replays.append(replay_data["find"])
+                        try:
+                            replay_data = json.loads(line.strip().rstrip(','))
+                            replays.append(replay_data["find"])
+                        except json.JSONDecodeError:
+                            continue
                         break
     replays.sort(key=lambda x: x["created"], reverse=True)
     return replays
