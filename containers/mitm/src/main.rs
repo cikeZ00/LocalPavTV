@@ -104,6 +104,9 @@ async fn event_handler(
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     let global_index = state.global_index.lock().unwrap();
     if let Some(event_data) = global_index.get(&event_id) {
+        if event_data.is_empty() {
+            return Err((StatusCode::NOT_FOUND, "Event data is empty".to_string()));
+        }
         // Compress the event data using gzip.
         let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
         encoder
@@ -453,8 +456,9 @@ async fn update_global_index(state: &AppState, replay_id: &str) -> Result<(), (S
                     for event in events {
                         if let (Some(id), Some(data)) = (event.get("id"), event.pointer("/data/data")) {
                             if let Some(id_str) = id.as_str() {
-                                // Assume the event data is stored as a string.
-                                let data_bytes = data.as_str().map(|s| s.as_bytes().to_vec()).unwrap_or_default();
+                                let data_bytes = data.as_array()
+                                    .map(|arr| arr.iter().filter_map(|v| v.as_u64().map(|u| u as u8)).collect::<Vec<u8>>())
+                                    .unwrap_or_default();
                                 global_index.insert(id_str.to_string(), data_bytes);
                             }
                         }
