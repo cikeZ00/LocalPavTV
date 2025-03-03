@@ -14,7 +14,7 @@ DATA_DIR = "data"
 HEADERS = {
     "Host": "tv.vankrupt.net",
     "Accept": "*/*",
-    "User-Agent": "Pavlov/++UE5+Release-5.1-CL-23901901 Windows/10.0.22631.1.256.64bit"
+    "User-Agent": "Pavlov/++UE5+Release-5.1-CL-0 Windows/10.0.22631.1.256.64bit"
 }
 
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -37,7 +37,7 @@ def base64_to_bytes(base64_str):
 
 @app.get("/list")
 def list_interesting_games():
-    games_list = requests.get(SERVER + "/find/any?dummy=0")
+    games_list = requests.get(SERVER + "/find/?game=all&offset=0&shack=true&live=false", verify=False, headers=HEADERS)
     games_list.raise_for_status()
     games = games_list.json()
     return [replay for replay in games["replays"] if replay["users"] and not replay["live"]]
@@ -60,7 +60,7 @@ def download_replay(replay_id: str):
 
     replay_data = {}
     
-    findAll = requests.get(f"{SERVER}/find/any?dummy=0", verify=False, headers=HEADERS)
+    findAll = requests.get(f"{SERVER}/find/?game=all&offset=0&shack=true&live=false", verify=False, headers=HEADERS)
     findAll.raise_for_status()
     findAll_json = findAll.json()
     findAllResponse = next((playback for playback in findAll_json["replays"] if playback["_id"] == replay_id), None)
@@ -99,12 +99,12 @@ def download_replay(replay_id: str):
     os.makedirs(replay_dir, exist_ok=True)
     
     with open(os.path.join(replay_dir, "replay.header"), "wb") as f:
-        f.write(requests.get(f"{SERVER}/replay/{replay_id}/file/replay.header", headers=HEADERS).content)
+        f.write(requests.get(f"{SERVER}/replay/{replay_id}/file/replay.header", verify=False, headers=HEADERS).content)
     
     timing_data = []
 
     for i in range(startDownload_json["numChunks"]):
-        stream_response = requests.get(f"{SERVER}/replay/{replay_id}/file/stream.{i}", headers=HEADERS)
+        stream_response = requests.get(f"{SERVER}/replay/{replay_id}/file/stream.{i}", verify=False,  headers=HEADERS)
         stream_response.raise_for_status()
         
         with open(os.path.join(replay_dir, f"stream.{i}"), "wb") as f:

@@ -4,7 +4,7 @@ import io
 import gzip
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse, StreamingResponse, Response
 from httpx import AsyncClient
@@ -116,9 +116,22 @@ async def get_event_stream(event_id: str):
     )
 
 
-@app.get("/find/any")
-async def list_replays():
+@app.get("/find/")
+async def list_replays(
+    game: str = Query("all"),
+    offset: int = Query(0),
+    shack: bool = Query(False),
+    live: bool = Query(False)
+):
     replays = get_all_replays()
+    
+    # Optionally filter by game if not "all"
+    if game != "all":
+        replays = [r for r in replays if r.get("game") == game]
+    
+    # Apply offset (pagination)
+    replays = replays[offset:]
+    
     return {"replays": replays}
 
 @app.get("/meta/{replay_id}")
