@@ -36,11 +36,12 @@ def base64_to_bytes(base64_str):
     return base64.b64decode(base64_str)
 
 @app.get("/list")
-def list_interesting_games():
-    games_list = requests.get(SERVER + "/find/?game=all&offset=0&shack=true&live=false", verify=False, headers=HEADERS)
+def list_interesting_games(offset: int = 0):
+    games_list = requests.get(f"{SERVER}/find/?game=all&offset={offset}&live=false", verify=False, headers=HEADERS)
     games_list.raise_for_status()
     games = games_list.json()
-    return [replay for replay in games["replays"] if replay["users"] and not replay["live"]]
+    replays = [replay for replay in games["replays"] if replay["users"] and not replay["live"]]
+    return {"replays": replays, "total": games["total"]}
 
 @app.get("/check/{replay_id}")
 def check_replay(replay_id: str):
@@ -59,11 +60,22 @@ def download_replay(replay_id: str):
         raise HTTPException(status_code=404)
 
     replay_data = {}
-    
-    findAll = requests.get(f"{SERVER}/find/?game=all&offset=0&shack=true&live=false", verify=False, headers=HEADERS)
-    findAll.raise_for_status()
-    findAll_json = findAll.json()
-    findAllResponse = next((playback for playback in findAll_json["replays"] if playback["_id"] == replay_id), None)
+    offset = 0
+    findAllResponse = None
+
+    while True:
+        findAll = requests.get(f"{SERVER}/find/?game=all&offset={offset}&live=false", verify=False, headers=HEADERS)
+        findAll.raise_for_status()
+        findAll_json = findAll.json()
+        findAllResponse = next((playback for playback in findAll_json["replays"] if playback["_id"] == replay_id), None)
+        
+        if findAllResponse:
+            break
+        
+        if offset >= findAll_json["total"]:
+            break
+        
+        offset += 100
 
     if not findAllResponse:
         raise HTTPException(status_code=400, detail="Recording not available.")

@@ -129,10 +129,12 @@ async def list_replays(
     if game != "all":
         replays = [r for r in replays if r.get("game") == game]
     
-    # Apply offset (pagination)
-    replays = replays[offset:]
+    total = len(replays)
     
-    return {"replays": replays}
+    # Apply offset
+    replays = replays[offset:offset + 100]
+    
+    return {"replays": replays, "total": total}
 
 @app.get("/meta/{replay_id}")
 async def meta(replay_id: str):
