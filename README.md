@@ -1,3 +1,6 @@
+## ⚠️ **ARCHIVED:** This project has been replaced by [PavlovReplayToolbox](https://github.com/cikeZ00/PavlovReplayToolbox). ⚠️
+No further updates will be made to this repository.
+
 # LocalPavTV
 
 This is a system that allows you to record and play back Pavlov VR competitive games at a later time.
